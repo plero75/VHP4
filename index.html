@@ -1,44 +1,49 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Hippodrome Vincennes</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Transports Hippodrome Vincennes</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div class="dashboard">
   <header>
-    <div class="logos">
-      <img src="assets/logo-vincennes.png" alt="Vincennes">
-      <img src="assets/logo-idfm.png" alt="IDFM">
-      <img src="assets/logo-ratp.png" alt="RATP">
-    </div>
-    <h1>Dashboard Temps Réel – Hippodrome de Vincennes</h1>
+    🚦 Dashboard Transports Hippodrome Vincennes
+    <span id="datetime"></span>
   </header>
 
-  <main>
-    <section class="ligne">
-      <img src="assets/lignes/rer-a.png" alt="RER A" class="ligne-logo">
-      <div class="horaires-ligne" id="rer-a"></div>
-    </section>
-    <section class="ligne">
-      <img src="assets/lignes/bus-77.png" alt="Bus 77" class="ligne-logo">
-      <div class="horaires-ligne" id="bus-77"></div>
-    </section>
-    <section class="ligne">
-      <img src="assets/lignes/bus-201.png" alt="Bus 201" class="ligne-logo">
-      <div class="horaires-ligne" id="bus-201"></div>
-    </section>
+  <section class="block rer" id="rer">
+    <h2>🚆 RER A</h2>
+    <p>Chargement...</p>
+  </section>
 
-    <section id="velib"></section>
-    <section id="meteo"></section>
-    <section id="circulation"></section>
-  </main>
+  <section class="block bus" id="bus77">
+    <h2>🚌 Bus 77</h2>
+    <p>Chargement...</p>
+  </section>
+
+  <section class="block bus" id="bus201">
+    <h2>🚌 Bus 201</h2>
+    <p>Chargement...</p>
+  </section>
+
+  <section class="block meteo" id="meteo">
+    <h2>🌤 Météo locale</h2>
+    <p>Chargement...</p>
+  </section>
+
+  <section class="block road" id="road">
+    <h2>🚗 Trafic routier</h2>
+    <p>Chargement...</p>
+  </section>
 
   <footer>
-    <p>&copy; 2025 Hippodrome de Vincennes | Données en temps réel via Île-de-France Mobilités & Open Data</p>
+    <div id="newsTicker" class="ticker">Chargement des actus...</div>
   </footer>
+</div>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

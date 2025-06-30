@@ -1,0 +1,41 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  background: #f2f2f2;
+}
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+header, footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 10px;
+  color: white;
+  background: #003366;
+  font-size: 1.2rem;
+}
+footer { background: #222; }
+#datetime { font-size: 0.9rem; margin-left: 0.5rem; }
+.block {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.bus { background: #004080; color: white; }
+.meteo { background: #f0f4f8; }
+.road { background: #fff3cd; }
+.ticker {
+  white-space: nowrap;
+  overflow: hidden;
+  animation: marquee 25s linear infinite;
+}
+@keyframes marquee {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+s { color: #ffb3b3; }
