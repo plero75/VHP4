@@ -5,17 +5,31 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
-  pages: write
+  pages: write          # pour publier sur Pages
   id-token: write
+  contents: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ───── 1 seul upload d'artefact ─────
+      - name: Upload site to Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: .
-      - uses: actions/deploy-pages@v4
+          path: .                 # racine du dépôt
+          name: github-pages      # nom explicite et unique
+
+      # ───── Déploiement ─────
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
