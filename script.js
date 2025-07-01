@@ -90,7 +90,9 @@ async function horaire(id, stop, title) {
       return;
     }
 
-    for (const v of visits.slice(0, 4)) {
+    // Affichage des 4 prochains passages
+    for (let i = 0; i < visits.slice(0, 4).length; i++) {
+      const v = visits[i];
       const call = v.MonitoredVehicleJourney.MonitoredCall;
       const aimed = new Date(call.AimedDepartureTime);
       const exp   = new Date(call.ExpectedDepartureTime);
@@ -98,7 +100,7 @@ async function horaire(id, stop, title) {
       const late  = diff > 1;
       const cancel = (call.ArrivalStatus || "").toLowerCase() === "cancelled";
 
-      // Gestion toutes structures DestinationDisplay
+      // Destination extraction
       let destination;
       if (Array.isArray(call.DestinationDisplay)) {
         destination = call.DestinationDisplay[0]?.value || "Indisponible";
@@ -117,11 +119,23 @@ async function horaire(id, stop, title) {
         else if (/seats|low|few|empty|available/i.test(occ)) crowd = "🟢";
       }
 
+      // Premier et dernier du jour, imminent, en gare/à l'arrêt
+      let tag = "";
+      const aimedStr = aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'});
+      if (fl?.first === aimedStr) tag = "🚦 Premier départ";
+      if (fl?.last === aimedStr) tag = "🛑 Dernier départ";
+      const now = new Date();
+      const timeToExp = (exp.getTime() - now.getTime())/1000;
+      if (timeToExp > 0 && timeToExp < 90) tag = "🟢 Imminent";
+      const status = call.StopPointStatus || call.ArrivalProximityText || "";
+      if (/arrivée|en gare|at stop|stopped/i.test(status) && id === "rer") tag = "🚉 En gare";
+      if (/at stop|stopped/i.test(status) && id.startsWith("bus")) tag = "🚌 À l'arrêt";
+
       html += cancel
         ? `❌ ${destination} (supprimé)<br>`
-        : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${destination} ${crowd}${late ? ` (retard +${diff}′)` : ""}<br>`;
+        : `🕒 ${late ? `<s>${aimedStr}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${destination} ${crowd} <b>${tag}</b>${late ? ` (retard +${diff}′)` : ""}<br>`;
 
-      // Ticker gares (RER uniquement ici, adapter pour bus si voulu)
+      // Ticker gares (RER uniquement)
       if (id === "rer") {
         const journey = v.MonitoredVehicleJourney?.VehicleJourneyRef;
         if (journey) {
