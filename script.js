@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 function loop() {
   clock();
   fetchAll();
+  startWeatherLoop();
 }
 
 function clock() {
@@ -75,8 +76,23 @@ async function horaire(id, stop, title) {
     if (fl) html += `♦️ ${fl.first} – ${fl.last}<br>`;
 
     if (!visits.length) {
-      block.innerHTML = html + "Aucun passage";
+      const fl = cache.firstLast?.[id];
+      if (fl) {
+        const firstTime = parseTimeToDate(fl.first);
+        const lastTime = parseTimeToDate(fl.last);
+        const now = new Date();
+        if (firstTime && now < firstTime) {
+          block.innerHTML = html + `Service non commencé – premier départ prévu à ${fl.first}`;
+          return;
+        }
+        if (lastTime && now > lastTime) {
+          block.innerHTML = html + `Service terminé – prochain départ prévu à ${fl.first}`;
+          return;
+        }
+      }
+      block.innerHTML = html + "Aucun passage prévu pour l’instant";
       return;
+    }
     }
 
     for (const v of visits.slice(0, 4)) {
@@ -170,4 +186,38 @@ async function news() {
     const r = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.francetvinfo.fr/titres.rss");
     el.textContent = (await r.json()).items.slice(0,10).map(i=>i.title).join(" • ");
   } catch { el.textContent = "Actus indisponibles"; }
+}
+
+
+async function fetchTrafficMessages() {
+  try {
+    const lines = [
+      "STIF:Line::C01742:", // RER A
+      "STIF:Line::C01789:", // Bus 77
+      "STIF:Line::C01805:"  // Bus 201
+    ];
+    for (const line of lines) {
+      const url = proxy + encodeURIComponent(`https://prim.iledefrance-mobilites.fr/marketplace/general-message?LineRef=${line}`);
+      const data = await fetch(url).then(r => r.ok ? r.json() : null);
+      const messages = data?.Siri?.ServiceDelivery?.GeneralMessageDelivery?.[0]?.InfoMessage || [];
+      const block = document.getElementById(`info-${line}`);
+      if (messages.length) {
+        let html = "⚠️ Perturbations :<br>";
+        messages.forEach(msg => {
+          const content = msg?.Content?.MessageText || "Indisponible";
+          html += `• ${content}<br>`;
+        });
+        block.innerHTML = html;
+      } else {
+        block.innerHTML = "";
+      }
+    }
+  } catch (e) {
+    console.warn("Erreur infos trafic :", e);
+  }
+}
+
+function startWeatherLoop() {
+  meteo(); // appel immédiat
+  setInterval(meteo, 30 * 60 * 1000); // toutes les 30 min
 }
