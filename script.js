@@ -101,9 +101,13 @@ async function horaire(id, stop, title) {
       const late  = diff > 1;
       const cancel = (call.ArrivalStatus || "").toLowerCase() === "cancelled";
 
+      const destination = typeof call.DestinationDisplay === 'object'
+        ? call.DestinationDisplay?.value || JSON.stringify(call.DestinationDisplay)
+        : call.DestinationDisplay || "Indisponible";
+
       html += cancel
-        ? `❌ ${call.DestinationDisplay} (supprimé)<br>`
-        : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${call.DestinationDisplay}${late ? ` (retard +${diff}′)` : ""}<br>`;
+        ? `❌ ${destination} (supprimé)<br>`
+        : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${destination}${late ? ` (retard +${diff}′)` : ""}<br>`;
 
       if (id === "rer") {
         const journey = v.MonitoredVehicleJourney?.VehicleJourneyRef;
@@ -165,10 +169,10 @@ async function meteo() {
 async function traficRoute() {
   const el = document.getElementById("road");
   try {
-    const url = "https://data.opendatasoft.com/api/records/1.0/search/?dataset=etat-de-circulation-en-temps-reel-sur-le-reseau-national-routier-non-concede&q=&rows=100";
+    const url = "https://data.cerema.fr/api/records/1.0/search/?dataset=etat-du-trafic-en-temps-reel&q=&rows=100";
     const rec = (await fetch(url).then(r=>r.json())).records;
-    const a86 = rec.find(r=>r.fields.route.includes("A86"))?.fields.niveau ?? "n/a";
-    const per = rec.find(r=>r.fields.route.toLowerCase().includes("périph"))?.fields.niveau ?? "n/a";
+    const a86 = rec.find(r=>r.fields.route?.includes("A86"))?.fields.niveau ?? "n/a";
+    const per = rec.find(r=>r.fields.route?.toLowerCase().includes("périph"))?.fields.niveau ?? "n/a";
     el.innerHTML = `<h2>🚗 Trafic routier</h2>A86 : ${a86} | Périph : ${per}`;
   } catch { el.textContent = "Erreur trafic routier"; }
 }
@@ -178,11 +182,19 @@ async function news() {
   const el = document.getElementById("newsTicker");
   try {
     const r = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.francetvinfo.fr/titres.rss");
-    el.textContent = (await r.json()).items.slice(0,10).map(i=>i.title).join(" • ");
+    el.textContent = (await r.json()).items.slice(0,3).map(i=>i.title).join(" • ");
   } catch { el.textContent = "Actus indisponibles"; }
 }
 
 function startWeatherLoop() {
   meteo();
   setInterval(meteo, 30 * 60 * 1000);
+}
+
+function parseTimeToDate(timeStr) {
+  if (!timeStr) return null;
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  const d = new Date();
+  d.setHours(hours, minutes, 0, 0);
+  return d;
 }
