@@ -1,5 +1,6 @@
-/* ========== CONST ========== */
-const proxy = "https://ratp-proxy.hippodrome-proxy42.workers.dev/?url=";
+import { CONFIG } from './config.js';
+
+const proxy = CONFIG.proxy;
 const lineMap = {
   "STIF:StopArea:SP:43135:": "STIF:Line::C01742:",
   "STIF:StopArea:SP:463641:": "STIF:Line::C01789:",
@@ -8,7 +9,6 @@ const lineMap = {
 const cache = { stops: null, firstLast: null, lastFetch: 0 };
 const ONE_DAY = 86_400_000;
 
-/* ========== BOOT ========== */
 document.addEventListener("DOMContentLoaded", async () => {
   await loadStatic();
   loop();
@@ -32,7 +32,6 @@ function clock() {
     });
 }
 
-/* ========== STATIC JSON (/static) ========== */
 async function loadStatic() {
   try {
     const saved = JSON.parse(localStorage.getItem("dashStatic") || "null");
@@ -51,11 +50,10 @@ async function loadStatic() {
   }
 }
 
-/* ========== HORAIRES ========= */
 function fetchAll() {
-  horaire("rer",  "STIF:StopArea:SP:43135:", "🚆 RER A");
-  horaire("bus77","STIF:StopArea:SP:463641:", "🚌 Bus 77");
-  horaire("bus201","STIF:StopArea:SP:463644:","🚌 Bus 201");
+  horaire("rer",  CONFIG.stops.rer, "🚆 RER A");
+  horaire("bus77",CONFIG.stops.bus77, "🚌 Bus 77");
+  horaire("bus201",CONFIG.stops.bus201,"🚌 Bus 201");
   meteo();
   news();
 }
@@ -113,17 +111,10 @@ async function horaire(id, stop, title) {
         ? `❌ ${destination} (supprimé)<br>`
         : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${destination}${late ? ` (retard +${diff}′)` : ""}<br>`;
 
-      if (id === "rer") {
-        const journey = v.MonitoredVehicleJourney?.VehicleJourneyRef;
-        if (journey) {
-          html += `<div id="gares-${journey}">🚉 …</div>`;
-          loadStops(journey);
-        }
-      }
+      // TODO: défilement des gares (à compléter si besoin)
     }
 
-    const alert = await lineAlert(stop);
-    if (alert) html += `<div class="info">${alert}</div>`;
+    // TODO: Perturbations temps réel, taux de fréquentation, etc.
 
     block.innerHTML = html;
   } catch (e) {
@@ -131,35 +122,14 @@ async function horaire(id, stop, title) {
   }
 }
 
-async function loadStops(journey) {
+async function news() {
+  const el = document.getElementById("newsTicker");
   try {
-    const url = proxy + encodeURIComponent(
-      `https://prim.iledefrance-mobilites.fr/marketplace/vehicle_journeys/${journey}`
-    );
-    const data = await fetch(url).then(r => r.ok ? r.json() : null);
-    const list = data?.vehicle_journeys?.[0]?.stop_times
-                  ?.map(s => s.stop_point.name)
-                  ?.join(", ");
-    const div = document.getElementById(`gares-${journey}`);
-    if (div) div.textContent = list ? `🚉 ${list}` : "";
-  } catch { /* ignore */ }
+    const r = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.francetvinfo.fr/titres.rss");
+    el.textContent = (await r.json()).items.slice(0,3).map(i=>i.title).join(" • ");
+  } catch { el.textContent = "Actus indisponibles"; }
 }
 
-async function lineAlert(stop) {
-  const line = lineMap[stop];
-  if (!line) return "";
-  try {
-    const url = proxy + encodeURIComponent(
-      `https://prim.iledefrance-mobilites.fr/marketplace/general-message?LineRef=${line}`
-    );
-    const data = await fetch(url).then(r=>r.ok?r.json():null);
-    const msg  = data?.Siri?.ServiceDelivery?.GeneralMessageDelivery?.[0]
-                  ?.InfoMessage?.[0]?.Message;
-    return msg ? `⚠️ ${msg}` : "";
-  } catch { return ""; }
-}
-
-/* ========== MÉTÉO ========== */
 async function meteo() {
   const el = document.getElementById("meteo");
   try {
@@ -167,15 +137,6 @@ async function meteo() {
     const c = (await r.json()).current_weather;
     el.innerHTML = `<h2>🌤 Météo locale</h2>${c.temperature} °C | Vent ${c.windspeed} km/h`;
   } catch { el.textContent = "Erreur météo"; }
-}
-
-/* ========== ACTU RSS ========== */
-async function news() {
-  const el = document.getElementById("newsTicker");
-  try {
-    const r = await fetch("https://api.rss2json.com/v1/api.json?rss_url=https://www.francetvinfo.fr/titres.rss");
-    el.textContent = (await r.json()).items.slice(0,3).map(i=>i.title).join(" • ");
-  } catch { el.textContent = "Actus indisponibles"; }
 }
 
 function startWeatherLoop() {
