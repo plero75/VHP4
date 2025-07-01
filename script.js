@@ -98,6 +98,7 @@ async function horaire(id, stop, title) {
       const late  = diff > 1;
       const cancel = (call.ArrivalStatus || "").toLowerCase() === "cancelled";
 
+      // Gestion toutes structures DestinationDisplay
       let destination;
       if (Array.isArray(call.DestinationDisplay)) {
         destination = call.DestinationDisplay[0]?.value || "Indisponible";
@@ -107,19 +108,66 @@ async function horaire(id, stop, title) {
         destination = call.DestinationDisplay || "Indisponible";
       }
 
+      // Taux de fréquentation
+      let crowd = "";
+      const occ = v.MonitoredVehicleJourney?.OccupancyStatus || v.MonitoredVehicleJourney?.Occupancy || "";
+      if (occ) {
+        if (/full|crowd|high/i.test(occ)) crowd = "🔴";
+        else if (/standing|medium|average/i.test(occ)) crowd = "🟡";
+        else if (/seats|low|few|empty|available/i.test(occ)) crowd = "🟢";
+      }
+
       html += cancel
         ? `❌ ${destination} (supprimé)<br>`
-        : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${destination}${late ? ` (retard +${diff}′)` : ""}<br>`;
+        : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${destination} ${crowd}${late ? ` (retard +${diff}′)` : ""}<br>`;
 
-      // TODO: défilement des gares (à compléter si besoin)
+      // Ticker gares (RER uniquement ici, adapter pour bus si voulu)
+      if (id === "rer") {
+        const journey = v.MonitoredVehicleJourney?.VehicleJourneyRef;
+        if (journey) {
+          html += `<div id="gares-${journey}" class="stops-scroll">🚉 …</div>`;
+          loadStops(journey);
+        }
+      }
     }
 
-    // TODO: Perturbations temps réel, taux de fréquentation, etc.
+    // Bandeau perturbations temps réel
+    const alert = await lineAlert(stop);
+    if (alert) html += `<div class="info">${alert}</div>`;
 
     block.innerHTML = html;
   } catch (e) {
     block.innerHTML = `<h2>${title}</h2>Erreur horaire`;
   }
+}
+
+async function lineAlert(stop) {
+  const line = lineMap[stop];
+  if (!line) return "";
+  try {
+    const url = proxy + encodeURIComponent(
+      `https://prim.iledefrance-mobilites.fr/marketplace/general-message?LineRef=${line}`
+    );
+    const data = await fetch(url).then(r => r.ok ? r.json() : null);
+    const messages = data?.Siri?.ServiceDelivery?.GeneralMessageDelivery?.[0]?.InfoMessage || [];
+    if (!messages.length) return "";
+    const msg = messages[0]?.Content?.MessageText || messages[0]?.Message || "";
+    return msg ? `⚠️ ${msg}` : "";
+  } catch { return ""; }
+}
+
+async function loadStops(journey) {
+  try {
+    const url = proxy + encodeURIComponent(
+      `https://prim.iledefrance-mobilites.fr/marketplace/vehicle_journeys/${journey}`
+    );
+    const data = await fetch(url).then(r => r.ok ? r.json() : null);
+    const list = data?.vehicle_journeys?.[0]?.stop_times
+                  ?.map(s => s.stop_point.name)
+                  ?.join(" ➔ ");
+    const div = document.getElementById(`gares-${journey}`);
+    if (div) div.textContent = list ? `🚉 ${list}` : "";
+  } catch { /* ignore */ }
 }
 
 async function news() {
