@@ -2,48 +2,22 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <title>🚦 Dashboard Transports Hippodrome Vincennes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard Transports Hippodrome Vincennes</title>
   <link rel="stylesheet" href="style.css">
+  <script type="module" src="config.js"></script>
+  <script defer src="script.js"></script>
 </head>
 <body>
-
-<div class="dashboard">
-  <header>
-    🚦 Dashboard Transports Hippodrome Vincennes
-    <span id="datetime"></span>
-  </header>
-
-  <section class="block rer" id="rer">
-    <h2>🚆 RER A</h2>
-    <p>Chargement...</p>
-  </section>
-
-  <section class="block bus" id="bus77">
-    <h2>🚌 Bus 77</h2>
-    <p>Chargement...</p>
-  </section>
-
-  <section class="block bus" id="bus201">
-    <h2>🚌 Bus 201</h2>
-    <p>Chargement...</p>
-  </section>
-
-  <section class="block meteo" id="meteo">
-    <h2>🌤 Météo locale</h2>
-    <p>Chargement...</p>
-  </section>
-
-  <section class="block road" id="road">
-    <h2>🚗 Trafic routier</h2>
-    <p>Chargement...</p>
-  </section>
-
-  <footer>
-    <div id="newsTicker" class="ticker">Chargement des actus...</div>
-  </footer>
-</div>
-
-<script src="script.js"></script>
+  <div id="main">
+    <header>
+      <h1>🚦 Dashboard Transports Hippodrome Vincennes <span id="datetime"></span></h1>
+    </header>
+    <section id="meteo"></section>
+    <section id="rer"></section>
+    <section id="bus77"></section>
+    <section id="bus201"></section>
+    <section id="newsTicker" class="ticker"></section>
+  </div>
 </body>
 </html>
