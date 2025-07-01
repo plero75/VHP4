@@ -13,12 +13,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadStatic();
   loop();
   setInterval(loop, 60_000);
+  startWeatherLoop();
 });
 
 function loop() {
   clock();
   fetchAll();
-  startWeatherLoop();
 }
 
 function clock() {
@@ -76,7 +76,6 @@ async function horaire(id, stop, title) {
     if (fl) html += `♦️ ${fl.first} – ${fl.last}<br>`;
 
     if (!visits.length) {
-      const fl = cache.firstLast?.[id];
       if (fl) {
         const firstTime = parseTimeToDate(fl.first);
         const lastTime = parseTimeToDate(fl.last);
@@ -93,7 +92,6 @@ async function horaire(id, stop, title) {
       block.innerHTML = html + "Aucun passage prévu pour l’instant";
       return;
     }
-    }
 
     for (const v of visits.slice(0, 4)) {
       const call = v.MonitoredVehicleJourney.MonitoredCall;
@@ -107,7 +105,6 @@ async function horaire(id, stop, title) {
         ? `❌ ${call.DestinationDisplay} (supprimé)<br>`
         : `🕒 ${late ? `<s>${aimed.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})}</s> → ` : ""}${exp.toLocaleTimeString("fr-FR",{hour:'2-digit',minute:'2-digit'})} → ${call.DestinationDisplay}${late ? ` (retard +${diff}′)` : ""}<br>`;
 
-      /* gares desservies (RER uniquement) */
       if (id === "rer") {
         const journey = v.MonitoredVehicleJourney?.VehicleJourneyRef;
         if (journey) {
@@ -117,7 +114,6 @@ async function horaire(id, stop, title) {
       }
     }
 
-    /* alerte trafic */
     const alert = await lineAlert(stop);
     if (alert) html += `<div class="info">${alert}</div>`;
 
@@ -127,7 +123,6 @@ async function horaire(id, stop, title) {
   }
 }
 
-/* stops par train */
 async function loadStops(journey) {
   try {
     const url = proxy + encodeURIComponent(
@@ -142,7 +137,6 @@ async function loadStops(journey) {
   } catch { /* ignore */ }
 }
 
-/* alerte ligne */
 async function lineAlert(stop) {
   const line = lineMap[stop];
   if (!line) return "";
@@ -171,7 +165,7 @@ async function meteo() {
 async function traficRoute() {
   const el = document.getElementById("road");
   try {
-    const url = "https://data.opendatasoft.com/api/records/1.0/search/?dataset=etat-du-trafic-en-temps-reel-sur-le-reseau-routier-national&q=&rows=100";
+    const url = "https://data.opendatasoft.com/api/records/1.0/search/?dataset=etat-de-circulation-en-temps-reel-sur-le-reseau-national-routier-non-concede&q=&rows=100";
     const rec = (await fetch(url).then(r=>r.json())).records;
     const a86 = rec.find(r=>r.fields.route.includes("A86"))?.fields.niveau ?? "n/a";
     const per = rec.find(r=>r.fields.route.toLowerCase().includes("périph"))?.fields.niveau ?? "n/a";
@@ -188,36 +182,7 @@ async function news() {
   } catch { el.textContent = "Actus indisponibles"; }
 }
 
-
-async function fetchTrafficMessages() {
-  try {
-    const lines = [
-      "STIF:Line::C01742:", // RER A
-      "STIF:Line::C01789:", // Bus 77
-      "STIF:Line::C01805:"  // Bus 201
-    ];
-    for (const line of lines) {
-      const url = proxy + encodeURIComponent(`https://prim.iledefrance-mobilites.fr/marketplace/general-message?LineRef=${line}`);
-      const data = await fetch(url).then(r => r.ok ? r.json() : null);
-      const messages = data?.Siri?.ServiceDelivery?.GeneralMessageDelivery?.[0]?.InfoMessage || [];
-      const block = document.getElementById(`info-${line}`);
-      if (messages.length) {
-        let html = "⚠️ Perturbations :<br>";
-        messages.forEach(msg => {
-          const content = msg?.Content?.MessageText || "Indisponible";
-          html += `• ${content}<br>`;
-        });
-        block.innerHTML = html;
-      } else {
-        block.innerHTML = "";
-      }
-    }
-  } catch (e) {
-    console.warn("Erreur infos trafic :", e);
-  }
-}
-
 function startWeatherLoop() {
-  meteo(); // appel immédiat
-  setInterval(meteo, 30 * 60 * 1000); // toutes les 30 min
+  meteo();
+  setInterval(meteo, 30 * 60 * 1000);
 }
