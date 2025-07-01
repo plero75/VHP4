@@ -1,12 +1,3 @@
-Affichage du premier et dernier passage du jour (picto 🚦/🛑)
-	•	Statut imminent si le passage a lieu dans moins de 1 min 30 (🟢)
-	•	En gare (🚉) pour les trains / à l’arrêt (🚌) pour les bus selon le status API
-	•	Taux de fréquentation 🟢🟡🔴 si disponible
-	•	Bandeau perturbations sous chaque ligne
-	•	Défilement fluide de la liste des gares desservies (ticker)
-	•	Gestion « service terminé » / « non commencé »
-	•	Limitation des actualités
-
 import { CONFIG } from './config.js';
 
 const proxy = CONFIG.proxy;
