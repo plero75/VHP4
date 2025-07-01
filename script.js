@@ -57,7 +57,6 @@ function fetchAll() {
   horaire("bus77","STIF:StopArea:SP:463641:", "🚌 Bus 77");
   horaire("bus201","STIF:StopArea:SP:463644:","🚌 Bus 201");
   meteo();
-  traficRoute();
   news();
 }
 
@@ -101,9 +100,14 @@ async function horaire(id, stop, title) {
       const late  = diff > 1;
       const cancel = (call.ArrivalStatus || "").toLowerCase() === "cancelled";
 
-      const destination = typeof call.DestinationDisplay === 'object'
-        ? call.DestinationDisplay?.value || JSON.stringify(call.DestinationDisplay)
-        : call.DestinationDisplay || "Indisponible";
+      let destination;
+      if (Array.isArray(call.DestinationDisplay)) {
+        destination = call.DestinationDisplay[0]?.value || "Indisponible";
+      } else if (typeof call.DestinationDisplay === 'object') {
+        destination = call.DestinationDisplay?.value || JSON.stringify(call.DestinationDisplay);
+      } else {
+        destination = call.DestinationDisplay || "Indisponible";
+      }
 
       html += cancel
         ? `❌ ${destination} (supprimé)<br>`
@@ -163,18 +167,6 @@ async function meteo() {
     const c = (await r.json()).current_weather;
     el.innerHTML = `<h2>🌤 Météo locale</h2>${c.temperature} °C | Vent ${c.windspeed} km/h`;
   } catch { el.textContent = "Erreur météo"; }
-}
-
-/* ========== TRAFIC ROUTIER ========== */
-async function traficRoute() {
-  const el = document.getElementById("road");
-  try {
-    const url = "https://data.cerema.fr/api/records/1.0/search/?dataset=etat-du-trafic-en-temps-reel&q=&rows=100";
-    const rec = (await fetch(url).then(r=>r.json())).records;
-    const a86 = rec.find(r=>r.fields.route?.includes("A86"))?.fields.niveau ?? "n/a";
-    const per = rec.find(r=>r.fields.route?.toLowerCase().includes("périph"))?.fields.niveau ?? "n/a";
-    el.innerHTML = `<h2>🚗 Trafic routier</h2>A86 : ${a86} | Périph : ${per}`;
-  } catch { el.textContent = "Erreur trafic routier"; }
 }
 
 /* ========== ACTU RSS ========== */
