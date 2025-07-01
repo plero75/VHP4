@@ -154,6 +154,55 @@ async function horaire(id, stop, title) {
     block.innerHTML = `<h2>${title}</h2>Erreur horaire`;
   }
 }
+async function trouverProchaineCourseVincennes() {
+  const now = new Date();
+  let dateToCheck = new Date(now);
+
+  for (let i=0; i<15; i++) { // chercher jusqu'à 15 jours
+    const dateStr = dateToCheck.toISOString().slice(0,10).split("-").reverse().join("");
+    const url = `https://offline.turfinfo.api.pmu.fr/rest/client/7/programme/${dateStr}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    for (const reunion of data.reunions) {
+      if (reunion.hippodrome.nomCourt.toUpperCase() === "VINCENNES") {
+        const firstCourse = reunion.courses[0];
+        const courseDateTime = new Date(`${dateToCheck.toISOString().slice(0,10)}T${firstCourse.heureDepart}`);
+        lancerCompteARebours(courseDateTime, firstCourse.libelle);
+        return;
+      }
+    }
+    // avancer au jour suivant
+    dateToCheck.setDate(dateToCheck.getDate() + 1);
+  }
+  document.getElementById("courses").innerHTML = "Aucune course prévue à Vincennes dans les 15 prochains jours.";
+}
+
+function lancerCompteARebours(targetDate, courseName) {
+  function update() {
+    const now = new Date();
+    let diffMs = targetDate - now;
+    if (diffMs <= 0) {
+      document.getElementById("courses").innerHTML = `La prochaine course « ${courseName} » est en cours ou terminée !`;
+      clearInterval(intervalId);
+      return;
+    }
+    const diffSec = Math.floor(diffMs/1000);
+    const days = Math.floor(diffSec/86400);
+    const hours = Math.floor((diffSec%86400)/3600);
+    const minutes = Math.floor((diffSec%3600)/60);
+    const seconds = diffSec%60;
+
+    const countdown = `${days} jour${days!==1?"s":""} ${hours} heure${hours!==1?"s":""} ${minutes} minute${minutes!==1?"s":""} et ${seconds} seconde${seconds!==1?"s":""}`;
+    document.getElementById("courses").innerHTML =
+      `Prochaine course à l’Hippodrome de Vincennes dans ${countdown} : « ${courseName} »`;
+  }
+  update(); // mise à jour immédiate
+  const intervalId = setInterval(update, 1000); // maj toutes les secondes
+}
+
+document.addEventListener("DOMContentLoaded", trouverProchaineCourseVincennes);
 
 async function lineAlert(stop) {
   const line = lineMap[stop];
