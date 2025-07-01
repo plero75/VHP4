@@ -20,3 +20,16 @@ Dashboard en temps réel pour l'Hippodrome de Vincennes.
 
 - Proxy utilisé : https://ratp-proxy.hippodrome-proxy42.workers.dev/
 - Les clés API sont gérées côté proxy pour plus de sécurité.
+
+## Mise à jour des données GTFS
+
+Les fichiers GTFS (arrêts et premiers/derniers passages) peuvent être mis à
+jour à l'aide du script `scripts/update-gtfs.js`. Utilisez Node.js 20 ou une
+version plus récente, puis installez la dépendance `node-fetch` et exécutez :
+
+```bash
+npm install node-fetch
+node scripts/update-gtfs.js
+```
+
+Les fichiers JSON générés sont enregistrés dans le dossier `static/`.
